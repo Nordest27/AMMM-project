@@ -1,0 +1,6 @@
+OBJECTIVE: 16
+
+D	E	A	A	
+C	C	A	A	
+C	C	B	B	
+F	G	B	B	

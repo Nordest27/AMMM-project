@@ -1,0 +1,12 @@
+x =  4;
+y =  4;
+c =  13;
+
+n =  7;
+
+// Let's index products with letters: A, B, C, ...
+
+//     A  B  C  D  E  F  G
+p = [  4  4  2  1  2  2  1  ];
+w = [  3  3  2  1  2  1  2  ];
+s = [  2  2  2  1  1  1  1  ];

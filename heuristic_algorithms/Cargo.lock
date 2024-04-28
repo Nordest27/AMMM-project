@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "AMMM-project"
+name = "ammm_project"
 version = "0.0.0"

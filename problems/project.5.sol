@@ -1,0 +1,6 @@
+OBJECTIVE: 15
+
+	F	C	C	
+E	D	C	C	
+B	B	A	A	
+B	B	A	A	

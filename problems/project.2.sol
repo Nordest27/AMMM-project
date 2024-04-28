@@ -1,0 +1,5 @@
+OBJECTIVE: 11
+
+	C	E	
+B	A	A	
+D	A	A	
