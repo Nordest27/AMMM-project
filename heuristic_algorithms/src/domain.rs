@@ -54,13 +54,20 @@ pub struct Product {
     // €
     pub price: i32,
 }
+
 impl Product {
     pub fn show(&self) {
         println!("Product {}: {}X{}(mm), {}(g), {}(€)",
                  self.name, self.dim_side, self.dim_side, self.weight, self.price);
     }
-
 }
+
+impl PartialEq for Product {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
+
 #[derive(Clone)]
 pub struct Suitcase {
     // in mm
@@ -107,7 +114,7 @@ impl Suitcase {
         return None;
     }
 
-    fn find_all_possible_fits(&self, product: &Product) -> Vec<(i32, i32)> {
+    pub fn find_all_possible_fits(&self, product: &Product) -> Vec<(i32, i32)> {
         let mut fits = Vec::new();
         for i in 0..self.dim_x - product.dim_side + 1{
             for j in 0..self.dim_y - product.dim_side + 1{
@@ -118,6 +125,27 @@ impl Suitcase {
         }
         return fits;
     }
+
+    pub fn get_useful_space(&self, dim_size: i32) -> i32 {
+        let mut useful_space = 0;
+        for i in 0..self.dim_x {
+            for j in 0..self.dim_y {
+                if self.collision(
+                    &Product {
+                        name: ' ',
+                        dim_side: dim_size,
+                        weight: 0,
+                        price: 0},
+                    i, j
+                ).is_none() {
+                    useful_space += 1;
+                }
+            }
+        }
+        return useful_space;
+
+    }
+
     pub fn add_product(&mut self, product: &Product, position: Option<(i32, i32)>) -> bool {
         let possible_fits = self.find_all_possible_fits(product);
         if possible_fits.len() == 0 {

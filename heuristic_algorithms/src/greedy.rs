@@ -31,7 +31,6 @@ pub fn greedy(
             current_weight += product.weight;
             current_price += product.price;
             selected_products.push(product);
-
         }
     }
     println!("Greedy Solution: {}€", current_price);
