@@ -43,11 +43,7 @@ pub fn read_input_file(file_path: &str) -> domain::Problem {
     let mut lines = reader.lines();
     let mut problem = domain::Problem {
         products: Vec::new(),
-        suitcase: domain::Suitcase {
-            dim_x: 0,
-            dim_y: 0,
-            max_weight: 0,
-        },
+        suitcase: domain::Suitcase::new()
     };
 
     problem.suitcase.dim_x = read_var_assign(lines.next());
