@@ -65,3 +65,24 @@ pub fn read_input_file(file_path: &str) -> domain::Problem {
     }
     return problem;
 }
+
+/* Example:
+OBJECTIVE: 8
+
+B       B       B       B
+B       B       B       B       D       D
+B       B       B       B       D       D
+B       B       B       B               E       E
+                                        E       E
+ */
+pub fn read_output_file(file_path: &str) -> i32 {
+    let file = File::open(file_path).expect("File not found");
+    let reader = BufReader::new(file);
+    let mut lines = reader.lines();
+    let mut objective = 0;
+    if let Some(Ok(line)) = lines.next() {
+        let mut x = line.split_whitespace().last().unwrap().chars();
+        objective = x.collect::<String>().parse().unwrap();
+    }
+    return objective;
+}

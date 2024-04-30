@@ -1,22 +1,46 @@
 mod reader;
 mod domain;
 mod greedy;
-mod greedy_local_search;
+mod local_search;
 mod grasp;
 
-fn main() {
-    let mut  problem = reader::read_input_file("../problems/project.0.dat");
-    /*
-    problem.show();
-    let heuristics = [
-        greedy::price_heuristic,
-        greedy::weight_heuristic,
-        greedy::dim_side_heuristic,
-        greedy::combined_heuristic,
-    ];
-    for heuristic in heuristics.iter() {
-        let _ = greedy::greedy(&problem, *heuristic);
+fn run_all_problems() {
+    let mut total_objective = 0;
+    let mut total_best_objective = 0;
+    for i in 0..10 {
+        let problem = reader::read_input_file(
+            format!("../problems/project.{}.dat", i).as_str());
+        let best_objective = reader::read_output_file(
+            format!("../problems/project.{}.sol", i).as_str());
+        total_best_objective += best_objective;
+        println!("Problem {}, Best Objective: {}", i, best_objective);
+        // let (problem, objective) = greedy::greedy(&problem, greedy::price_heuristic);
+        // let (problem, objective) = greedy::greedy(&problem, greedy::weight_heuristic);
+        // let (problem, objective) = greedy::greedy(&problem, greedy::dim_side_heuristic);
+        // let (problem, objective) = greedy::greedy(&problem, greedy::combined_heuristic);
+        // let (problem, objective) = greedy::one_step_deep_greedy(&problem);
+        // let objective = local_search::simulated_annealing(&problem, 1.0, 1000);
+        let objective = grasp::grasp(&problem, 10);
+        total_objective += objective;
     }
-    */
-    let _ = greedy_local_search::greedy_local_search(&problem);
+    println!("Objective: {}, Best Objective Difference: {}",
+             total_objective, total_best_objective - total_objective);
+}
+
+fn main() {
+    let mut  problem = reader::read_input_file("../problems/project.9.dat");
+
+    // problem.show();
+    // let heuristics = [
+    //     greedy::price_heuristic,
+    //     greedy::weight_heuristic,
+    //     greedy::dim_side_heuristic,
+    //     greedy::combined_heuristic,
+    // ];
+    // for heuristic in heuristics.iter() {
+    //     let _ = greedy::greedy(&problem, *heuristic);
+    // }
+    //
+    // let _ = greedy_local_search::greedy_local_search(&problem);
+    run_all_problems();
 }

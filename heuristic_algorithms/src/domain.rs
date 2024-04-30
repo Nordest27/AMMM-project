@@ -76,7 +76,7 @@ pub struct Suitcase {
     // grams
     pub max_weight: i32,
     // products with position
-    products: Vec<(Product, i32, i32)>,
+    pub products: Vec<(Product, i32, i32)>,
 }
 
 impl Suitcase {
@@ -126,33 +126,41 @@ impl Suitcase {
         return fits;
     }
 
-    pub fn get_useful_space(&self, dim_size: i32) -> i32 {
-        let mut useful_space = 0;
-        for i in 0..self.dim_x {
-            for j in 0..self.dim_y {
-                if self.collision(
-                    &Product {
-                        name: ' ',
-                        dim_side: dim_size,
-                        weight: 0,
-                        price: 0},
-                    i, j
-                ).is_none() {
-                    useful_space += 1;
+    pub fn get_biggest_fit(&self) -> i32 {
+        let mut biggest_fit = self.dim_x.min(self.dim_y);
+        while self.collision(&Product {
+            name: ' ',
+            dim_side: biggest_fit,
+            weight: 0,
+            price: 0,
+        }, 0, 0).is_some() {
+            biggest_fit -= 1;
+        }
+
+        return biggest_fit;
+    }
+
+    pub fn does_fit(&self, product: &Product) -> bool {
+        for i in 0..self.dim_x - product.dim_side + 1 {
+            for j in 0..self.dim_y - product.dim_side + 1 {
+                if self.collision(&product, i, j).is_none() {
+                    return true;
                 }
             }
         }
-        return useful_space;
-
+        return false;
     }
 
     pub fn add_product(&mut self, product: &Product, position: Option<(i32, i32)>) -> bool {
+        if self.max_weight < self.get_weight() + product.weight {
+            return false;
+        }
         let possible_fits = self.find_all_possible_fits(product);
         if possible_fits.len() == 0 {
             return false;
         }
         let (x, y) = match position {
-            None => possible_fits[0],
+            None => possible_fits[rand::random::<usize>() % possible_fits.len()],
             Some((x, y)) => {
                 if self.out_of_bounds(product, x, y) {
                     return false;
@@ -163,6 +171,73 @@ impl Suitcase {
         self.products.push((product.clone(), x, y));
         return true;
     }
+
+    pub fn move_product(&mut self, product: &Product, x: i32, y: i32) -> bool {
+        if self.out_of_bounds(product, x, y) || self.collision(product, x, y).is_some() {
+            return false;
+        }
+        if let Some((_, px, py)) =
+            self.products.iter_mut().find(|(p, _, _)| p == product) {
+            *px = x;
+            *py = y;
+            return true;
+        }
+        false
+    }
+
+    pub fn replace_product(&mut self, product: &Product, x: i32, y: i32) -> bool {
+
+        if self.out_of_bounds(&product, x, y) {
+            return false;
+        }
+
+        // Find and remove the existing product at the specified coordinates
+        if let Some(i) = self.products.iter().position(|(_, px, py)| *px == x && *py == y) {
+            self.products.remove(i);
+        } else {
+            return false; // No existing product at the specified coordinates
+        }
+
+        // Check collision for the new product
+        if self.collision(&product, x, y).is_some() ||
+            self.max_weight < self.get_weight() + product.weight
+        {
+            return false; // Collision with the new product
+        }
+
+        // Insert the new product at the specified coordinates
+        self.products.push((product.clone(), x, y));
+        true
+    }
+
+    pub fn remove_product(&mut self, product: &Product) -> bool {
+        let mut index = 0;
+        for (p, _, _) in &self.products {
+            if p == product {
+                self.products.remove(index);
+                return true;
+            }
+            index += 1;
+        }
+        return false;
+    }
+
+    pub fn get_weight(&self) -> i32 {
+        let mut weight = 0;
+        for (product, _, _) in &self.products {
+            weight += product.weight;
+        }
+        return weight;
+    }
+
+    pub fn get_price(&self) -> i32 {
+        let mut price = 0;
+        for (product, _, _) in &self.products {
+            price += product.price;
+        }
+        return price;
+    }
+
     pub fn show(&self) {
         println!("Max Weight: {}(g)", self.max_weight);
         println!("Suitcase Dims: {}X{}(mm)", self.dim_x, self.dim_y);
