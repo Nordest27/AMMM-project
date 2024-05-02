@@ -1,3 +1,5 @@
+use crate::greedy::greedy_loop;
+
 mod reader;
 mod domain;
 mod greedy;
@@ -18,9 +20,14 @@ fn run_all_problems() {
         // let (problem, objective) = greedy::greedy(&problem, greedy::weight_heuristic);
         // let (problem, objective) = greedy::greedy(&problem, greedy::dim_side_heuristic);
         // let (problem, objective) = greedy::greedy(&problem, greedy::combined_heuristic);
-        // let (problem, objective) = greedy::one_step_deep_greedy(&problem);
-        // let objective = local_search::simulated_annealing(&problem, 1.0, 1000);
-        let objective = grasp::grasp(&problem, 10);
+        // let (problem, objective) = greedy::greedy_loop(&problem, greedy::one_step_deep_heuristic);
+        // let (problem, objective) = greedy::greedy_loop(&problem, greedy::perimeter_heuristic);
+        // let (suitcase, objective) = local_search::simulated_annealing(&problem, 1.0);
+        // let (suitcase, objective) = local_search::hill_climbing(&problem);
+
+        let objective = grasp::grasp(&problem, 60);
+        // problem.suitcase.show();
+        // suitcase.show();
         total_objective += objective;
     }
     println!("Objective: {}, Best Objective Difference: {}",

@@ -1,27 +1,35 @@
 use crate::domain::{Problem, Suitcase};
-use crate::greedy::{greedy, price_heuristic, one_step_deep_heuristic, one_step_deep_greedy};
+use crate::greedy::{greedy, price_heuristic, perimeter_heuristic, random_heuristic, one_step_deep_heuristic, greedy_loop};
 use crate::local_search::{hill_climbing, simulated_annealing};
 use rand;
 pub fn grasp(problem: &Problem, max_iterations: i32) -> i32
 {
+    let mut problem= problem.clone();
     let mut best_objective = 0;
     let mut best_suitcase = problem.suitcase.clone();
-    for _ in 0..max_iterations {
-        // let (problem, _) = greedy(&problem, price_heuristic);
-        let (problem, _) = one_step_deep_greedy(&problem);
-        let mut problem = problem.clone();
-        let copy_of_suitcase = problem.suitcase.clone();
-        for _ in 0..rand::random::<usize>() % problem.suitcase.products.len() {
-            problem.suitcase.remove_product(&problem.products[rand::random::<usize>() % problem.products.len()]);
+    for i in 0..max_iterations {
+        let mut iter_problem: Problem;
+        match i%3 {
+            0 => (iter_problem, _) = greedy(&problem, price_heuristic),
+            1 => (iter_problem, _) = greedy(&problem, random_heuristic),
+            2 => (iter_problem, _) = greedy_loop(&problem, perimeter_heuristic),
+            3 => (iter_problem, _) = greedy_loop(&problem, one_step_deep_heuristic),
+            _ => unreachable!()
         }
-        let objective = simulated_annealing(&problem, 0.5, 100);
-        // let objective = hill_climbing(&problem);
+        for _ in 0..rand::random::<usize>() % iter_problem.suitcase.products.len() {
+            iter_problem.suitcase.remove_product(
+                &iter_problem.products[
+                    rand::random::<usize>() % iter_problem.products.len()
+                    ]
+            );
+        }
+        let (suitcase, objective) = hill_climbing(&iter_problem);
         if objective > best_objective {
             best_objective = objective;
-            best_suitcase = copy_of_suitcase;
+            best_suitcase = suitcase;
         }
     }
-    println!("Best Objective: {}", best_objective);
+    println!("Best suitcase {}€ {}g {}bo", best_suitcase.get_price(), best_suitcase.get_weight(), best_objective);
     best_suitcase.show();
-    return best_objective;
+    return best_suitcase.get_price();
 }

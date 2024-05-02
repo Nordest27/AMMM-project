@@ -2,6 +2,10 @@ use crate::domain::{Problem, Suitcase, Product};
 use rand;
 use crate::greedy::{one_step_deep_heuristic};
 
+fn objective(suitcase: &Suitcase) -> i32{
+    return suitcase.get_price()-suitcase.get_perimeter();
+}
+
 fn apply_replacement(
     suitcase: &Suitcase,
     product: &Product,
@@ -16,14 +20,10 @@ fn apply_replacement(
 }
 
 fn get_replacements(
-    problem: Problem,
-    suitcase: &Suitcase
+    suitcase: &Suitcase,
+    remaining_products: &Vec<Product>
 ) -> Vec<Suitcase> {
     let mut replacements = Vec::new();
-    let suitcase_products = suitcase.products.iter().map(|(p, _, _)| p).cloned().collect::<Vec<Product>>();
-    let remaining_products: Vec<Product> = problem.products.iter().filter(|product| {
-        !suitcase_products.contains(&product)
-    }).cloned().collect::<Vec<Product>>();
     for product in remaining_products.iter() {
         for (_, x, y) in suitcase.products.iter() {
             if let Some(new_suitcase) = apply_replacement(suitcase, product, *x, *y) {
@@ -47,13 +47,12 @@ fn get_removals(
 }
 
 fn get_moves(
-    problem: Problem,
     suitcase: &Suitcase
 ) -> Vec<Suitcase> {
     let mut moves = Vec::new();
     for (product, _, _) in &suitcase.products{
-        for x in 0..problem.suitcase.dim_x {
-            for y in 0..problem.suitcase.dim_y {
+        for x in 0..suitcase.dim_x {
+            for y in 0..suitcase.dim_y {
                 let mut new_suitcase = suitcase.clone();
                 if new_suitcase.move_product(product, x, y) {
                     moves.push(new_suitcase);
@@ -82,83 +81,69 @@ fn get_additions(
     return additions;
 }
 
-
-
-fn get_random_neighbour(
-    problem: Problem,
-    suitcase: &Suitcase
-) -> Option<(Suitcase, i32)> {
-    let suitcase_products = suitcase.products.iter().map(|(p, _, _)| p).cloned().collect::<Vec<Product>>();
-    let remaining_products: Vec<Product> = problem.products.iter().filter(|product| {
-        !suitcase_products.contains(&product)
-    }).cloned().collect::<Vec<Product>>();
-    let mut neighbours = Vec::new();
-    neighbours.append(&mut get_replacements(problem.clone(), suitcase));
-    neighbours.append(&mut get_removals(suitcase));
-    neighbours.append(&mut get_moves(problem.clone(), suitcase));
-    neighbours.append(&mut get_additions(suitcase, &remaining_products));
-    if neighbours.len() == 0 {
-        return None;
-    }
-    let random_index = rand::random::<usize>() % neighbours.len();
-    let chosen_suitcase: Suitcase = neighbours[random_index].clone();
-    let objective = chosen_suitcase.get_price();
-    return Some((chosen_suitcase, objective));
+fn get_all_suitcase_neighbours(
+    problem: &Problem,
+) -> Vec<Suitcase>
+{
+    let remaining_products: Vec<Product> = problem.remaining_possible_products();
+    let mut neighbours: Vec<Suitcase> = Vec::new();
+    neighbours.append(&mut get_replacements(&problem.suitcase, &remaining_products));
+    neighbours.append(&mut get_removals(&problem.suitcase));
+    neighbours.append(&mut get_moves(&problem.suitcase));
+    neighbours.append(&mut get_additions(&problem.suitcase, &remaining_products));
+    return neighbours;
 }
 
-pub fn simulated_annealing(problem: &Problem, temperature: f64, iters: i32) -> i32 {
-    let mut suitcase: Suitcase = problem.suitcase.clone();
-    let mut objective = suitcase.get_price();
+pub fn simulated_annealing(problem: &Problem, temperature: f64) -> (Suitcase, i32) {
+    let mut problem = problem.clone();
+    let mut best_problem = problem.clone();
+    let mut best_objective = objective(&problem.suitcase);
     let mut temperature = temperature;
-    let mut best_objective = objective;
-    let mut best_suitcase = suitcase.clone();
 
-    for _ in 0..iters {
-        let (new_suitcase, new_objective) =
-            match get_random_neighbour(problem.clone(), &suitcase) {
-            Some(neighbour) => neighbour,
-            None => break,
-        };
-        let delta = (new_objective - objective) as f64;
-        // if delta < 0.0 {println!("Delta: {}, Temperature: {}, probability: {}", delta, temperature, (delta / temperature).exp())};
-        if delta > 0.0 || rand::random::<f64>() < (delta / temperature).exp() {
-            suitcase = new_suitcase;
-            objective = new_objective;
+    while temperature > 0.0001 {
+        let neighbours = get_all_suitcase_neighbours(&problem);
+        if neighbours.len() == 0 {break}
+        loop {
+            let mut visited_neighbours: std::collections::HashMap<i32, i32> = std::collections::HashMap::new();
+            let random_index = rand::random::<usize>() % neighbours.len();
+            let new_suitcase: Suitcase = neighbours[random_index].clone();
+
+            let mut new_objective= 0;
+            match visited_neighbours.get(&(random_index as i32)){
+                Some(&result) => new_objective = result,
+                _ => new_objective = objective(&new_suitcase)
+            }
+
+            let delta = (new_objective - best_objective) as f64;
+            if delta > 0.0 || rand::random::<f64>() < (delta / temperature).exp() {
+                problem.suitcase = new_suitcase;
+                if best_objective > new_objective {
+                    best_objective = new_objective;
+                    best_problem.suitcase = problem.suitcase.clone();
+                }
+                break
+            }
         }
-
-        if objective > best_objective {
-            best_objective = objective;
-            best_suitcase = suitcase.clone();
-        }
-
-        temperature *= 0.999; // Temperature reduction
+        temperature *= 0.999;
         // suitcase.show();
     }
 
-    println!("Simulated Annealing Solution: {}€ {}g", best_suitcase.get_price(), best_suitcase.get_weight());
-    // best_suitcase.show();
+    println!("Simulated Annealing Solution: {}€ {}g", problem.suitcase.get_price(), problem.suitcase.get_weight());
+    problem.suitcase.show();
 
-    best_suitcase.get_price()
+    let price = problem.suitcase.get_price();
+    return (problem.suitcase, price);
 }
 
 fn get_best_neighbour(
-    problem: Problem,
-    suitcase: &Suitcase
+    problem: &Problem,
 ) -> Option<(Suitcase, i32)> {
-    let suitcase_products = suitcase.products.iter().map(|(p, _, _)| p).cloned().collect::<Vec<Product>>();
-    let remaining_products: Vec<Product> = problem.products.iter().filter(|product| {
-        !suitcase_products.contains(&product)
-    }).cloned().collect::<Vec<Product>>();
-    let mut best_suitcase = suitcase.clone();
-    let mut best_objective = suitcase.get_price();
-    let mut neighbours = Vec::new();
+    let mut best_suitcase = problem.suitcase.clone();
+    let mut best_objective = objective(&best_suitcase);
+    let mut neighbours = get_all_suitcase_neighbours(problem);
     let mut found = false;
-    neighbours.append(&mut get_replacements(problem.clone(), suitcase));
-    neighbours.append(&mut get_removals(suitcase));
-    neighbours.append(&mut get_moves(problem.clone(), suitcase));
-    neighbours.append(&mut get_additions(suitcase, &remaining_products));
     for neighbour in neighbours {
-        let objective = neighbour.get_price();
+        let objective = objective(&neighbour);
         if objective > best_objective {
             best_objective = objective;
             best_suitcase = neighbour;
@@ -171,19 +156,18 @@ fn get_best_neighbour(
     return Some((best_suitcase, best_objective));
 }
 
-pub fn hill_climbing(problem: &Problem) -> i32 {
-    let mut suitcase: Suitcase = problem.suitcase.clone();
-    let mut objective = suitcase.get_price();
-
+pub fn hill_climbing(problem: &Problem) -> (Suitcase, i32) {
+    let mut problem = problem.clone();
+    let mut objective = objective(&problem.suitcase);
     loop {
         let (new_suitcase, new_objective) =
-            match get_best_neighbour(problem.clone(), &suitcase) {
+            match get_best_neighbour(&problem) {
             Some(neighbour) => neighbour,
             None => break,
         };
 
         if new_objective > objective {
-            suitcase = new_suitcase;
+            problem.suitcase = new_suitcase;
             objective = new_objective;
         }
         else {
@@ -191,9 +175,8 @@ pub fn hill_climbing(problem: &Problem) -> i32 {
         }
         // suitcase.show();
     }
-
-    // println!("Hill Climbing Solution: {}€ {}g", suitcase.get_price(), suitcase.get_weight());
-    // suitcase.show();
-
-    return suitcase.get_price();
+    println!("Hill Climbing Solution: {}€ {}g", problem.suitcase.get_price(), problem.suitcase.get_weight());
+    // problem.suitcase.show();
+    let price = problem.suitcase.get_price();
+    return (problem.suitcase, price);
 }

@@ -79,6 +79,14 @@ pub struct Suitcase {
     pub products: Vec<(Product, i32, i32)>,
 }
 
+impl PartialEq for Suitcase {
+    fn eq(&self, other: &Self) -> bool {
+        return self.dim_y==other.dim_y && self.dim_x==other.dim_y &&
+            self.max_weight==other.max_weight &&
+            self.products==other.products
+    }
+}
+
 impl Suitcase {
 
     pub fn new() -> Suitcase {
@@ -149,6 +157,30 @@ impl Suitcase {
             }
         }
         return false;
+    }
+
+    pub fn get_perimeter(&self) -> i32 {
+        let mut perimeter = 0;
+        let mut matrix = vec![vec![false; self.dim_x as usize]; self.dim_y as usize];
+        for (product, x, y) in &self.products {
+            for i in 0..product.dim_side {
+                for j in 0..product.dim_side {
+                    matrix[(y + i) as usize][(x + j) as usize] = true;
+                }
+            }
+        }
+        for i in 0..matrix.len() {
+            for j in 0..matrix[0].len() {
+                if !matrix[i][j] {
+                    if i == 0 || matrix[i-1][j] {perimeter += 1;}
+                    if i == (self.dim_y-1) as usize || matrix[i+1][j] {perimeter += 1;}
+                    if j == 0 || matrix[i][j-1] {perimeter += 1;}
+                    if j == (self.dim_x-1) as usize || matrix[i][j+1] {perimeter += 1;}
+                }
+            }
+        }
+        return perimeter;
+
     }
 
     pub fn add_product(&mut self, product: &Product, position: Option<(i32, i32)>) -> bool {
@@ -237,7 +269,6 @@ impl Suitcase {
         }
         return price;
     }
-
     pub fn show(&self) {
         println!("Max Weight: {}(g)", self.max_weight);
         println!("Suitcase Dims: {}X{}(mm)", self.dim_x, self.dim_y);
@@ -265,4 +296,16 @@ impl Problem {
             product.show();
         }
     }
+
+    pub fn remaining_possible_products(&self) -> Vec<Product> {
+        let suitcase_products = self.suitcase.products.iter().map(
+            |(p, _, _)| p
+        ).collect::<Vec<&Product>>();
+        return self.products.iter().filter(|product| {
+            !suitcase_products.contains(product) &&
+                product.weight + self.suitcase.get_weight() <= self.suitcase.max_weight &&
+                self.suitcase.does_fit(&product)
+        }).cloned().collect::<Vec<Product>>();
+    }
+
 }
