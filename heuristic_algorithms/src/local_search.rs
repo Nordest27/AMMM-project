@@ -94,47 +94,6 @@ fn get_all_suitcase_neighbours(
     return neighbours;
 }
 
-pub fn simulated_annealing(problem: &Problem, temperature: f64) -> (Suitcase, i32) {
-    let mut problem = problem.clone();
-    let mut best_problem = problem.clone();
-    let mut best_objective = objective(&problem.suitcase);
-    let mut temperature = temperature;
-
-    while temperature > 0.0001 {
-        let neighbours = get_all_suitcase_neighbours(&problem);
-        if neighbours.len() == 0 {break}
-        loop {
-            let mut visited_neighbours: std::collections::HashMap<i32, i32> = std::collections::HashMap::new();
-            let random_index = rand::random::<usize>() % neighbours.len();
-            let new_suitcase: Suitcase = neighbours[random_index].clone();
-
-            let mut new_objective= 0;
-            match visited_neighbours.get(&(random_index as i32)){
-                Some(&result) => new_objective = result,
-                _ => new_objective = objective(&new_suitcase)
-            }
-
-            let delta = (new_objective - best_objective) as f64;
-            if delta > 0.0 || rand::random::<f64>() < (delta / temperature).exp() {
-                problem.suitcase = new_suitcase;
-                if best_objective > new_objective {
-                    best_objective = new_objective;
-                    best_problem.suitcase = problem.suitcase.clone();
-                }
-                break
-            }
-        }
-        temperature *= 0.999;
-        // suitcase.show();
-    }
-
-    println!("Simulated Annealing Solution: {}€ {}g", problem.suitcase.get_price(), problem.suitcase.get_weight());
-    problem.suitcase.show();
-
-    let price = problem.suitcase.get_price();
-    return (problem.suitcase, price);
-}
-
 fn get_best_neighbour(
     problem: &Problem,
 ) -> Option<(Suitcase, i32)> {

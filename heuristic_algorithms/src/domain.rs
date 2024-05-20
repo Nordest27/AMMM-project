@@ -308,4 +308,15 @@ impl Problem {
         }).cloned().collect::<Vec<Product>>();
     }
 
+    pub fn non_possible_products(&self) -> Vec<Product> {
+        let suitcase_products = self.suitcase.products.iter().map(
+            |(p, _, _)| p
+        ).collect::<Vec<&Product>>();
+        return self.products.iter().filter(|product| {
+            !suitcase_products.contains(product) &&
+                (product.weight + self.suitcase.get_weight() > self.suitcase.max_weight ||
+                !self.suitcase.does_fit(&product))
+        }).cloned().collect::<Vec<Product>>();
+    }
+
 }

@@ -20,13 +20,12 @@ fn run_all_problems() {
         // let (problem, objective) = greedy::greedy(&problem, greedy::weight_heuristic);
         // let (problem, objective) = greedy::greedy(&problem, greedy::dim_side_heuristic);
         // let (problem, objective) = greedy::greedy(&problem, greedy::combined_heuristic);
-        // let (problem, objective) = greedy::greedy_loop(&problem, greedy::one_step_deep_heuristic);
-        // let (problem, objective) = greedy::greedy_loop(&problem, greedy::perimeter_heuristic);
-        // let (suitcase, objective) = local_search::simulated_annealing(&problem, 1.0);
-        // let (suitcase, objective) = local_search::hill_climbing(&problem);
+        //let (problem, objective) = greedy::greedy_loop(&problem, greedy::one_step_deep_heuristic, 0.0);
+        //let (problem, objective) = greedy::greedy_loop(&problem, greedy::perimeter_heuristic, 0.0);
+        //let (suitcase, objective) = local_search::hill_climbing(&problem);
 
-        let objective = grasp::grasp(&problem, 60);
-        // problem.suitcase.show();
+        let objective = grasp::grasp(&problem, 50, 0.5);
+        // problem.suitcase.show()
         // suitcase.show();
         total_objective += objective;
     }
