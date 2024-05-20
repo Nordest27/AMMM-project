@@ -24,7 +24,7 @@ fn run_all_problems() {
         //let (problem, objective) = greedy::greedy_loop(&problem, greedy::perimeter_heuristic, 0.0);
         //let (suitcase, objective) = local_search::hill_climbing(&problem);
 
-        let objective = grasp::grasp(&problem, 50, 0.5);
+        let objective = grasp::grasp(&problem, 10, 0.05);
         // problem.suitcase.show()
         // suitcase.show();
         total_objective += objective;
@@ -48,5 +48,10 @@ fn main() {
     // }
     //
     // let _ = greedy_local_search::greedy_local_search(&problem);
-    run_all_problems();
+    // run_all_problems();
+    let problem = domain::generate_problem(45, 41);
+    //let objective = grasp::grasp(&problem, 10, 0.15);
+    let (problem, objective) = greedy_loop(&problem, greedy::perimeter_heuristic, 0.0);
+    println!("Objective: {}, Weight {}", objective, problem.suitcase.get_weight());
+    problem.suitcase.show();
 }

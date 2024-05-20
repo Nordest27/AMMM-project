@@ -104,7 +104,7 @@ pub fn greedy_loop(
     }
     let price: i32 = problem.suitcase.get_price();
     let weight: i32 = problem.suitcase.get_weight();
-    //println!("Greedy Loop Solution: {}€ {}g", price, weight);
-    //problem.suitcase.show();
+    println!("Greedy Loop Solution: {}€ {}g", price, weight);
+    problem.suitcase.show();
     return (problem, price);
 }

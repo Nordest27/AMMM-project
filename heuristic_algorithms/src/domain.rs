@@ -1,3 +1,5 @@
+use rand::random;
+
 pub fn show_rect(dim_x: i32, dim_y: i32, name: char) {
     print!("┏");
     for _ in 0..dim_x {
@@ -318,5 +320,37 @@ impl Problem {
                 !self.suitcase.does_fit(&product))
         }).cloned().collect::<Vec<Product>>();
     }
+}
 
+pub fn generate_problem(x: i32, y: i32) -> Problem {
+    let mut products = Vec::new();
+    let mut product_size = ((x.min(y) as f32)*(0.5 + random::<f32>()*0.5)) as i32;
+
+    let mut max_weight = 0;
+    let mut index = 0;
+    while product_size > 0 {
+        println!("Product Size: {}", product_size);
+        let number_of_products = (random::<i32>() % 8).abs();
+        println!("Number of Products: {}", number_of_products);
+        for i in 0..number_of_products {
+            let weight = (random::<i32>() % 10).abs();
+            if (random::<i32>() % 10).abs() < 8 { max_weight += weight; }
+            products.push(Product {
+                name: (65 + index) as u8 as char,
+                dim_side: product_size,
+                weight,
+                price: 1,
+            });
+            index += 1;
+        }
+        product_size = ((product_size as f32)*(0.5 + random::<f32>()*0.5)) as i32;
+    }
+    let mut suitcase = Suitcase::init(x, y, max_weight);
+    for problem in &products {
+        println!("Added Product: {}", problem.name);
+    }
+    Problem {
+        products,
+        suitcase,
+    }
 }

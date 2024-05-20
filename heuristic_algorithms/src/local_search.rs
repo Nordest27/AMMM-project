@@ -129,9 +129,7 @@ pub fn hill_climbing(problem: &Problem) -> (Suitcase, i32) {
             problem.suitcase = new_suitcase;
             objective = new_objective;
         }
-        else {
-            break;
-        }
+        else { break; }
         // suitcase.show();
     }
     println!("Hill Climbing Solution: {}€ {}g", problem.suitcase.get_price(), problem.suitcase.get_weight());
