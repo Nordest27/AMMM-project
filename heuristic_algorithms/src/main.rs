@@ -57,9 +57,9 @@ fn main() {
     //
     // let _ = greedy_local_search::greedy_local_search(&problem);
     // run_all_problems();
-    let problem = domain::generate_problem(30, 30);
-    let objective = grasp::grasp(&problem, 1, 0.1);
-    // let (problem, objective) = greedy_loop(&problem, greedy::one_step_deep_heuristic, 0.0);
+    let problem = domain::generate_problem(35, 42);
+    let objective = grasp::grasp(&problem, 10, 0.1);
+    //let (problem, objective) = greedy_loop(&problem, greedy::one_step_deep_heuristic, 0.0);
     // write_problem_file(&problem);
     // run_my_problems();
 }

@@ -1,4 +1,5 @@
 use std::cmp::max;
+use std::cmp::min;
 use rand::random;
 
 pub fn show_rect(dim_x: i32, dim_y: i32, name: char) {
@@ -116,6 +117,7 @@ impl Suitcase {
     }
 
     fn collision(&self, product: &Product, x: i32, y: i32) -> Option<&Product> {
+        if product.dim_side <= 0 { return None }
         for (p, px, py) in &self.products {
             if x < *px + p.dim_side && *px < x + product.dim_side &&
                 y < *py + p.dim_side && *py < y + product.dim_side {
@@ -137,17 +139,17 @@ impl Suitcase {
         return fits;
     }
 
-    pub fn get_biggest_fit(&self) -> i32 {
-        let mut biggest_fit = self.dim_x.min(self.dim_y);
+    pub fn get_biggest_fit_in(&self, x: i32, y: i32) -> i32 {
+        let mut biggest_fit = (self.dim_x-x).min(self.dim_y-y);
+
         while self.collision(&Product {
             name: ' ',
             dim_side: biggest_fit,
             weight: 0,
             price: 0,
-        }, 0, 0).is_some() {
+        }, x, y).is_some() {
             biggest_fit -= 1;
         }
-
         return biggest_fit;
     }
 
@@ -183,7 +185,6 @@ impl Suitcase {
             }
         }
         return perimeter;
-
     }
 
     pub fn add_product(&mut self, product: &Product, position: Option<(i32, i32)>) -> bool {
@@ -323,17 +324,9 @@ impl Problem {
     }
 }
 
-fn calculate_max_weight(x:i32, y: i32, products: &Vec<Product>) -> i32 {
+fn calculate_max_weight(suitcase: &Suitcase) -> i32 {
     let mut weight = 0;
-    let mut total_area = x*y;
-    let mut products = products.clone();
-    products.sort_by(|a, b| a.weight.cmp(&b.weight));
-    for product in products {
-        let area = product.dim_side*product.dim_side;
-        if total_area < area {
-            continue;
-        }
-        total_area -= area;
+    for (product, _, _) in &suitcase.products {
         weight += product.weight;
     }
     return weight;
@@ -341,40 +334,63 @@ fn calculate_max_weight(x:i32, y: i32, products: &Vec<Product>) -> i32 {
 
 pub fn generate_problem(x: i32, y: i32) -> Problem {
     let mut products = Vec::new();
-    let max_size = x.min(y);
+    let max_size = 80*x.min(y)/100;
+    let mut remaining_area = x*y;
     let mut index = 0;
     let mut test_suitcase = Suitcase::init(x, y, i32::MAX);
 
-    let mut product_size = ((max_size as f32)*(0.5 + random::<f32>()*0.49)) as i32;
-    while product_size > 0 {
-        if (index + 65) as u8 as char > '~' {
-            break;
-        }
-        let weight = 1 + (
-            random::<i32>() % 6).abs() + max(product_size.ilog(2) as i32, 2
-        );
-        let p = Product {
-            name: (65 + index) as u8 as char,
-            dim_side: product_size,
-            weight,
-            price: 1 + (random::<i32>() % 6).abs() + weight.ilog(2) as i32
-        };
-        println!("Product Size: {} ", product_size);
-        if random::<i32>() % 10 < 7 {
-            let mut fits = test_suitcase.find_all_possible_fits(&p);
-            if fits.len() == 0 || random::<i32>() % 5 == 0 {
-                product_size = (product_size as f32).log(1.2).min(product_size as f32) as i32 - 1;
+    for i in 0..y {
+        for j in 0..x {
+            if (index + 65) as u8 as char > '~' {
+                println!("Skipping because of char");
+                break;
+            }
+            let biggest_fit = test_suitcase.get_biggest_fit_in(j, i);
+            println!("Biggest Fit {}", biggest_fit);
+            if biggest_fit < 1 {
                 continue;
             }
-            let (x, y) = fits[0];
-            test_suitcase.add_product(&p, Some((x, y)));
+            let mut product_size = max(
+                min(max_size, biggest_fit) -
+                    (remaining_area == biggest_fit*biggest_fit) as i32,
+                1
+            );zfrg
+            if product_size % 2 == 0 && random::<bool>() { product_size /= 2;}
+            else if product_size % 3 == 0 && random::<bool>() { product_size /= 3;}
+            println!("Product size {}", product_size);
+            let p = Product {
+                name: (65 + index) as u8 as char,
+                dim_side: product_size,
+                weight: 1 + (random::<i32>() % 9).abs(),
+                price: 1 + (random::<i32>() % 9).abs()
+            };
+            if (random::<i32>() % 5).abs() == 0 {
+                let other_product = Product {
+                    name: (65 + (index + 1)) as u8 as char,
+                    dim_side: product_size,
+                    weight: 1 + (random::<i32>() % 9).abs(),
+                    price: 1 + (random::<i32>() % 9).abs()
+                };
+                println!("Other Product Added {}mm {}g {}€",
+                         other_product.dim_side, other_product.weight, other_product.price);
+                products.push(other_product);
+                index += 1;
+            }
+
+            if test_suitcase.add_product( &p, Some((j, i)) ) {
+                println!("Product Added {}mm {}g {}€", p.dim_side, p.weight, p.price);
+                remaining_area -= p.dim_side*p.dim_side;
+                products.push(p);
+                index += 1;
+            }
+            else {
+                println!("Couldn't add product {}mm {}g {}€", p.dim_side, p.weight, p.price);
+            }
         }
-        println!("Added Product: {}", p.name);
-        products.push(p);
-        index += 1;
     }
+    println!("Generated Objective: {}€", test_suitcase.get_price());
     test_suitcase.show();
-    let mut suitcase = Suitcase::init(x, y, calculate_max_weight(x, y, &products));
+    let mut suitcase = Suitcase::init(x, y, calculate_max_weight(&test_suitcase));
     Problem {
         products,
         suitcase,
