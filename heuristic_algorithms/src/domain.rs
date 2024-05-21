@@ -1,3 +1,4 @@
+use std::cmp::max;
 use rand::random;
 
 pub fn show_rect(dim_x: i32, dim_y: i32, name: char) {
@@ -322,33 +323,58 @@ impl Problem {
     }
 }
 
+fn calculate_max_weight(x:i32, y: i32, products: &Vec<Product>) -> i32 {
+    let mut weight = 0;
+    let mut total_area = x*y;
+    let mut products = products.clone();
+    products.sort_by(|a, b| a.weight.cmp(&b.weight));
+    for product in products {
+        let area = product.dim_side*product.dim_side;
+        if total_area < area {
+            continue;
+        }
+        total_area -= area;
+        weight += product.weight;
+    }
+    return weight;
+}
+
 pub fn generate_problem(x: i32, y: i32) -> Problem {
     let mut products = Vec::new();
-    let mut product_size = ((x.min(y) as f32)*(0.5 + random::<f32>()*0.5)) as i32;
-
-    let mut max_weight = 0;
+    let max_size = x.min(y);
     let mut index = 0;
+    let mut test_suitcase = Suitcase::init(x, y, i32::MAX);
+
+    let mut product_size = ((max_size as f32)*(0.5 + random::<f32>()*0.49)) as i32;
     while product_size > 0 {
-        println!("Product Size: {}", product_size);
-        let number_of_products = (random::<i32>() % 8).abs();
-        println!("Number of Products: {}", number_of_products);
-        for i in 0..number_of_products {
-            let weight = (random::<i32>() % 10).abs();
-            if (random::<i32>() % 10).abs() < 8 { max_weight += weight; }
-            products.push(Product {
-                name: (65 + index) as u8 as char,
-                dim_side: product_size,
-                weight,
-                price: 1,
-            });
-            index += 1;
+        if (index + 65) as u8 as char > '~' {
+            break;
         }
-        product_size = ((product_size as f32)*(0.5 + random::<f32>()*0.5)) as i32;
+        let weight = 1 + (
+            random::<i32>() % 6).abs() + max(product_size.ilog(2) as i32, 2
+        );
+        let p = Product {
+            name: (65 + index) as u8 as char,
+            dim_side: product_size,
+            weight,
+            price: 1 + (random::<i32>() % 6).abs() + weight.ilog(2) as i32
+        };
+        println!("Product Size: {} ", product_size);
+        if random::<i32>() % 10 < 7 {
+            let mut fits = test_suitcase.find_all_possible_fits(&p);
+            if fits.len() == 0 || random::<i32>() % 5 == 0 {
+                product_size = (product_size as f32).log(1.2).min(product_size as f32) as i32 - 1;
+                continue;
+            }
+            let (x, y) = fits[0];
+            test_suitcase.add_product(&p, Some((x, y)));
+        }
+        println!("Added Product: {}", p.name);
+        products.push(p);
+        index += 1;
     }
-    let mut suitcase = Suitcase::init(x, y, max_weight);
-    for problem in &products {
-        println!("Added Product: {}", problem.name);
-    }
+    test_suitcase.show();
+    let mut suitcase = Suitcase::init(x, y, calculate_max_weight(x, y, &products));
     Problem {
         products,
         suitcase,

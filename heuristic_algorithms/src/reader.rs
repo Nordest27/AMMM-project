@@ -1,7 +1,9 @@
 use crate::domain;
 use std::io::{BufRead, BufReader};
 use std::fs::File;
+use std::fs::write;
 use std::io::Error;
+use crate::domain::Problem;
 
 
 /*
@@ -85,4 +87,34 @@ pub fn read_output_file(file_path: &str) -> i32 {
         objective = x.collect::<String>().parse().unwrap();
     }
     return objective;
+}
+
+pub fn write_problem_file(problem: &Problem) {
+    let mut content = format!("x =  {};\n", problem.suitcase.dim_x);
+    content.push_str(&format!("y =  {};\n", problem.suitcase.dim_y));
+    content.push_str(&format!("c = {};\n", problem.suitcase.max_weight));
+    content.push_str("\n");
+    content.push_str(&format!("n =  {};\n\n", problem.products.len()));
+    content.push_str("// Let's index products with letters: A, B, C, ...\n\n");
+    content.push_str("//     ");
+    for product in problem.products.iter() {
+        content.push_str(&format!("{}   ", product.name));
+    }
+    content.push_str("\n");
+    content.push_str("p = [");
+    for product in problem.products.iter() {
+        content.push_str(&format!("  {} ", product.price));
+    }
+    content.push_str(" ];\n");
+    content.push_str("w = [");
+    for product in problem.products.iter() {
+        content.push_str(&format!("  {} ", product.weight));
+    }
+    content.push_str(" ];\n");
+    content.push_str("s = [");
+    for product in problem.products.iter() {
+        content.push_str(&format!("  {} ", product.dim_side));
+    }
+    content.push_str(" ];\n");
+    write("problem.dat", content).expect("Unable to write file");
 }

@@ -1,10 +1,18 @@
 use crate::greedy::greedy_loop;
+use crate::reader::write_problem_file;
 
 mod reader;
 mod domain;
 mod greedy;
 mod local_search;
 mod grasp;
+fn run_my_problems() {
+    let problem = reader::read_input_file("../generated_problems/myproblem.0.dat");
+
+    let objective = grasp::grasp(&problem, 100, 0.5);
+
+    println!("Objective: {}", objective);
+}
 
 fn run_all_problems() {
     let mut total_objective = 0;
@@ -24,7 +32,7 @@ fn run_all_problems() {
         //let (problem, objective) = greedy::greedy_loop(&problem, greedy::perimeter_heuristic, 0.0);
         //let (suitcase, objective) = local_search::hill_climbing(&problem);
 
-        let objective = grasp::grasp(&problem, 10, 0.05);
+        let objective = grasp::grasp(&problem, 10, 0.20);
         // problem.suitcase.show()
         // suitcase.show();
         total_objective += objective;
@@ -49,9 +57,9 @@ fn main() {
     //
     // let _ = greedy_local_search::greedy_local_search(&problem);
     // run_all_problems();
-    let problem = domain::generate_problem(45, 41);
-    //let objective = grasp::grasp(&problem, 10, 0.15);
-    let (problem, objective) = greedy_loop(&problem, greedy::perimeter_heuristic, 0.0);
-    println!("Objective: {}, Weight {}", objective, problem.suitcase.get_weight());
-    problem.suitcase.show();
+    let problem = domain::generate_problem(30, 30);
+    let objective = grasp::grasp(&problem, 1, 0.1);
+    // let (problem, objective) = greedy_loop(&problem, greedy::one_step_deep_heuristic, 0.0);
+    // write_problem_file(&problem);
+    // run_my_problems();
 }
