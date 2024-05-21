@@ -354,7 +354,7 @@ pub fn generate_problem(x: i32, y: i32) -> Problem {
                 min(max_size, biggest_fit) -
                     (remaining_area == biggest_fit*biggest_fit) as i32,
                 1
-            );zfrg
+            );
             if product_size % 2 == 0 && random::<bool>() { product_size /= 2;}
             else if product_size % 3 == 0 && random::<bool>() { product_size /= 3;}
             println!("Product size {}", product_size);
