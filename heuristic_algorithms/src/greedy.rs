@@ -12,6 +12,18 @@ pub fn perimeter_heuristic(
     return 10*product.price - problem.suitcase.get_perimeter();
 }
 
+pub fn corners_heuristic(
+    problem: &Problem,
+    product: &Product,
+    x: i32, y: i32,
+) -> i32 {
+    let mut problem: Problem = problem.clone();
+    if !problem.suitcase.add_product(product, Some((x, y))) {
+        return 0;
+    }
+    return product.price - problem.suitcase.get_n_corners() - problem.suitcase.get_perimeter();
+}
+
 pub fn one_step_deep_heuristic(
     problem: &Problem,
     product: &Product,
@@ -29,7 +41,10 @@ pub fn one_step_deep_heuristic(
     for iter_product in &non_possible_products {
         non_possible_products_heuristic += iter_product.price;
     }
-    return product.price - non_possible_products_heuristic - problem.suitcase.get_perimeter();
+    return product.price
+        - non_possible_products_heuristic
+        - problem.suitcase.get_perimeter()
+        - problem.suitcase.get_n_corners();
 }
 
 pub fn price_heuristic(
@@ -70,7 +85,7 @@ pub fn greedy_loop(
         let mut product_placements: Vec<(Product, i32, i32)> = Vec::new();
         let mut product_placement_heuristics: Vec<i32> = Vec::new();
         for product in &remaining_products {
-            let mut possible_fits = problem.suitcase.find_all_possible_fits(product);
+            let mut possible_fits = problem.suitcase.find_all_possible_corner_fits(product);
             for (x, y) in possible_fits {
                 let calculated_h = product_placement_heuristic(
                     &problem, product, x, y
@@ -105,6 +120,6 @@ pub fn greedy_loop(
     let price: i32 = problem.suitcase.get_price();
     let weight: i32 = problem.suitcase.get_weight();
     println!("Greedy Loop Solution: {}€ {}g", price, weight);
-    problem.suitcase.show();
+    //problem.suitcase.show();
     return (problem, price);
 }

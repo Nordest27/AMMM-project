@@ -51,6 +51,7 @@ pub fn read_input_file(file_path: &str) -> domain::Problem {
     problem.suitcase.dim_x = read_var_assign(lines.next());
     problem.suitcase.dim_y = read_var_assign(lines.next());
     problem.suitcase.max_weight = read_var_assign(lines.next());
+    problem.suitcase.compute_matrix();
 
     for _ in 0..6 { lines.next(); }
 

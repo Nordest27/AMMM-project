@@ -3,7 +3,7 @@ use rand;
 use crate::greedy::{one_step_deep_heuristic};
 
 fn objective(suitcase: &Suitcase) -> i32{
-    return suitcase.get_price()-suitcase.get_perimeter();
+    return 10*suitcase.get_price()-suitcase.get_perimeter()-suitcase.get_n_corners();
 }
 
 fn apply_replacement(
@@ -51,14 +51,15 @@ fn get_moves(
 ) -> Vec<Suitcase> {
     let mut moves = Vec::new();
     for (product, _, _) in &suitcase.products{
-        for x in 0..suitcase.dim_x {
-            for y in 0..suitcase.dim_y {
-                let mut new_suitcase = suitcase.clone();
-                if new_suitcase.move_product(product, x, y) {
-                    moves.push(new_suitcase);
-                }
-            }
+        let mut new_suitcase = suitcase.clone();
+        new_suitcase.remove_product(product);
+        let fits = new_suitcase.find_all_possible_corner_fits(product);
+        for fit in fits {
+            let mut suitcase_to_add = new_suitcase.clone();
+            suitcase_to_add.add_product(product, Some(fit));
+            moves.push(suitcase_to_add);
         }
+
     }
     return moves;
 }
@@ -70,7 +71,7 @@ fn get_additions(
 
     let mut additions = Vec::new();
     for product in remaining_products.iter() {
-        let fits = suitcase.find_all_possible_fits(product);
+        let fits = suitcase.find_all_possible_corner_fits(product);
         for (x, y) in fits {
             let mut new_suitcase = suitcase.clone();
             if new_suitcase.add_product(product, Some((x, y))) {
