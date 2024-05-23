@@ -16,7 +16,7 @@ pub fn grasp(problem: &Problem, alpha: f32) -> i32
     let mut i= 0;
     loop {
         if i - last_improvement > 25 {
-            println!("No improvement in the last 10 iterations");
+            println!("No improvement in the last 25 iterations");
             break;
         }
         // let (iter_problem, _) = greedy_loop(&problem, price_heuristic, alpha);

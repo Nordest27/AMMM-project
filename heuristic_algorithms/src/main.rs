@@ -33,7 +33,7 @@ fn run_all_problems() {
         // let (problem, objective) = greedy::greedy_loop(&problem, greedy::corners_heuristic, 0.0);
         // let (suitcase, objective) = local_search::hill_climbing(&problem);
 
-        let objective = grasp::grasp(&problem, 0.1);
+        let objective = grasp::grasp(&problem, 0.5);
         // problem.suitcase.show()
         // suitcase.show();
         total_objective += objective;
@@ -58,7 +58,7 @@ fn main() {
     //
     // let _ = greedy_local_search::greedy_local_search(&problem);
     // run_all_problems();
-    let problem = domain::generate_problem(25, 75);
+    let problem = domain::generate_problem(30, 30);
     write_problem_file(&problem);
     let objective = grasp::grasp(&problem, 0.3);
     // let (problem, objective) = greedy_loop(&problem, greedy::one_step_deep_heuristic, 0.0);

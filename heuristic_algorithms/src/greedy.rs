@@ -9,7 +9,12 @@ pub fn perimeter_heuristic(
     if !problem.suitcase.add_product(product, Some((x, y))) {
         return 0;
     }
-    return 10*product.price - problem.suitcase.get_perimeter();
+    let empty_sections = problem.suitcase.get_empty_sections_with_size();
+    let dims = problem.suitcase.dim_x*problem.suitcase.dim_y;
+    return 10*dims*problem.suitcase.get_price()
+        -dims*problem.suitcase.get_perimeter()
+        -dims*problem.suitcase.get_n_corners()
+        -(empty_sections.iter().map(|(_, size)|dims/size).sum::<i32>())
 }
 
 pub fn corners_heuristic(
@@ -119,6 +124,9 @@ pub fn greedy_loop(
     }
     let price: i32 = problem.suitcase.get_price();
     let weight: i32 = problem.suitcase.get_weight();
+    // problem.suitcase.get_empty_sections_with_size().iter().for_each(|section| {
+    //     println!("Empty section: {}x{}", section.0, section.1);
+    // });
     println!("Greedy Loop Solution: {}€ {}g", price, weight);
     //problem.suitcase.show();
     return (problem, price);

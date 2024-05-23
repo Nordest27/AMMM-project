@@ -1,5 +1,7 @@
 use std::cmp::max;
 use std::cmp::min;
+use std::collections::HashMap;
+use std::iter::Map;
 use rand::random;
 
 pub fn show_rect(dim_x: i32, dim_y: i32, name: char) {
@@ -146,10 +148,7 @@ impl Suitcase {
         let mut fits = Vec::new();
         for i in 0..self.dim_x - product.dim_side+1{
             for j in 0..self.dim_y - product.dim_side+1{
-                if self.collision_matrix[j as usize][i as usize]
-                    || self.collision_matrix[(j+product.dim_side-1) as usize][i as usize]
-                    || self.collision_matrix[j as usize][(i+product.dim_side-1) as usize]
-                    || self.collision_matrix[(j+product.dim_side-1) as usize][(i+product.dim_side-1) as usize]
+                if self.collision(&product, i, j).is_some()
                     || (self.corners_in_position(i, j) == 0
                         && self.corners_in_position(i+product.dim_side-1, j) == 0
                         && self.corners_in_position(i, j+product.dim_side-1) == 0
@@ -229,6 +228,72 @@ impl Suitcase {
             }
         }
         return corners;
+    }
+    fn repre(&self, parent: &mut Vec<Vec<(i32, i32)>>, x: i32, y: i32) -> (i32, i32) {
+        let (px, py) = parent[y as usize][x as usize];
+        if px == -1 && py == -1 || (px == x && py == y) {
+            return (x, y);
+        }
+        let root = self.repre(parent, px, py);
+        parent[y as usize][x as usize] = root; // Path compression
+        root
+    }
+    pub fn get_empty_sections_with_size(&self) -> Vec<(i32, i32)> {
+        // Use Union-Find to find the number of empty sections and their sizes
+        let mut empty_sections: HashMap<(i32, i32), i32> = HashMap::new();
+        let mut parent: Vec<Vec<(i32, i32)>> = vec![vec![(-1, -1); self.dim_x as usize]; self.dim_y as usize];
+        for i in 0..self.dim_y {
+            for j in 0..self.dim_x {
+                if !self.collision_matrix[i as usize][j as usize] {
+                    // Check for the left and top neighbors
+                    if  j > 0 && !self.collision_matrix[i as usize][j as usize - 1] &&
+                        i > 0 && !self.collision_matrix[i as usize - 1][j as usize] {
+                        let (x, y) = self.repre(&mut parent, j-1, i);
+                        let (x2, y2) = self.repre(&mut parent, j, i-1);
+                        if x != x2 || y != y2 {
+                            parent[y as usize][x as usize] = (x2, y2);
+                            let first_parent_size = *empty_sections.get(&parent[y as usize][x as usize]).unwrap();
+                            empty_sections.entry((x2, y2)).and_modify(|e| *e += first_parent_size).or_insert(first_parent_size);
+                            empty_sections.remove(&(x, y));
+                        }
+                        parent[i as usize][j as usize] = (x2, y2);
+                        empty_sections.entry((x2, y2)).and_modify(|e| *e += 1).or_insert(1);
+                    }
+                    else if j > 0 && !self.collision_matrix[i as usize][j as usize - 1] {
+                        let (x, y) = self.repre(&mut parent, j-1, i);
+                        parent[i as usize][j as usize] = (x, y);
+                        empty_sections.entry((x, y)).and_modify(|e| *e += 1).or_insert(1);
+                    }
+                    else if i > 0 && !self.collision_matrix[i as usize - 1][j as usize] {
+                        let (x, y) = self.repre(&mut parent, j, i-1);
+                        parent[i as usize][j as usize] = (x, y);
+                        empty_sections.entry((x, y)).and_modify(|e| *e += 1).or_insert(1);
+                    }
+                    else {
+                        parent[i as usize][j as usize] = (j, i);
+                        empty_sections.entry((j, i)).and_modify(|e| *e += 1).or_insert(1);
+                    }
+                }
+            }
+        }
+        // // Print matrix to check
+        // for i in 0..self.dim_y {
+        //     for j in 0..self.dim_x {
+        //         let val = parent[i as usize][j as usize];
+        //         if val.0 == -1 && val.1 == -1 {
+        //             print!(" -1 ", );
+        //         }
+        //         else if val.0 < 10 {
+        //             print!("  {} ", val.0);
+        //         }
+        //         else {
+        //             print!(" {} ", val.0);
+        //         }
+        //     }
+        //     println!();
+        // }
+
+        empty_sections.into_iter().map(|(k, v)| (k.0, v)).collect()
     }
 
     pub fn compute_matrix(&mut self) {
@@ -416,7 +481,7 @@ fn calculate_max_weight(suitcase: &Suitcase) -> i32 {
 
 pub fn generate_problem(x: i32, y: i32) -> Problem {
     let mut products = Vec::new();
-    let max_size = ((50+random::<i32>().abs()%26)*x.min(y))/100;
+    let max_size = ((30+random::<i32>()%26)*x.min(y))/100;
     println!("Max size {}", max_size);
     let mut remaining_area = x*y;
     let mut index = 0;
