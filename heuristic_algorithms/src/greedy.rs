@@ -49,7 +49,8 @@ pub fn one_step_deep_heuristic(
     return product.price
         - non_possible_products_heuristic
         - problem.suitcase.get_perimeter()
-        - problem.suitcase.get_n_corners();
+        - problem.suitcase.get_n_corners()
+    ;
 }
 
 pub fn price_heuristic(
@@ -128,6 +129,7 @@ pub fn greedy_loop(
     //     println!("Empty section: {}x{}", section.0, section.1);
     // });
     println!("Greedy Loop Solution: {}€ {}g", price, weight);
-    //problem.suitcase.show();
+    // problem.suitcase.show();
+    // problem.suitcase.show_collision_jump_matrix();
     return (problem, price);
 }

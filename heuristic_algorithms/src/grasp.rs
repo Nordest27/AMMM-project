@@ -22,8 +22,9 @@ pub fn grasp(problem: &Problem, alpha: f32) -> i32
         // let (iter_problem, _) = greedy_loop(&problem, price_heuristic, alpha);
         //let (iter_problem, _) = greedy_loop(&problem, combined_heuristic, alpha);
         // let (iter_problem, _) = greedy_loop(&problem, perimeter_heuristic, alpha);
-        let (iter_problem, _) = greedy_loop(&problem, one_step_deep_heuristic, alpha);
+        let (iter_problem, objective) = greedy_loop(&problem, one_step_deep_heuristic, alpha);
         let (suitcase, objective) = hill_climbing(&iter_problem);
+        let suitcase = iter_problem.suitcase.clone();
         if objective > best_objective {
             println!("Improvement in iteration {} -> {}€ {}g",
                      i, suitcase.get_price(), suitcase.get_weight());
@@ -40,6 +41,7 @@ pub fn grasp(problem: &Problem, alpha: f32) -> i32
     println!("Best suitcase {}€ {}g",
              best_suitcase.get_price(), best_suitcase.get_weight());
     best_suitcase.show();
+    best_suitcase.show_collision_jump_matrix();
     problem.suitcase = best_suitcase;
     println!("Unused products:");
     for product in problem.non_possible_products().iter() {

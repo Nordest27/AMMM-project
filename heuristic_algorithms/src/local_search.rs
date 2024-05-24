@@ -44,7 +44,7 @@ fn get_removals(
     suitcase: &Suitcase
 ) -> Vec<Suitcase> {
     let mut removals = Vec::new();
-    for (product, x, y) in suitcase.products.iter() {
+    for (product, _, _) in suitcase.products.iter() {
         let mut new_suitcase = suitcase.clone();
         new_suitcase.remove_product(product);
         removals.push(new_suitcase);
@@ -94,10 +94,10 @@ fn get_all_suitcase_neighbours(
 {
     let remaining_products: Vec<Product> = problem.remaining_possible_products();
     let mut neighbours: Vec<Suitcase> = Vec::new();
-    neighbours.append(&mut get_replacements(&problem.suitcase, &remaining_products));
-    neighbours.append(&mut get_removals(&problem.suitcase));
-    neighbours.append(&mut get_moves(&problem.suitcase));
-    neighbours.append(&mut get_additions(&problem.suitcase, &remaining_products));
+    // neighbours.append(&mut get_replacements(&problem.suitcase, &remaining_products));
+    // neighbours.append(&mut get_removals(&problem.suitcase));
+    // neighbours.append(&mut get_moves(&problem.suitcase));
+    // neighbours.append(&mut get_additions(&problem.suitcase, &remaining_products));
     return neighbours;
 }
 

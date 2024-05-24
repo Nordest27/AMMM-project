@@ -83,7 +83,9 @@ pub struct Suitcase {
     pub max_weight: i32,
     // products with position
     pub products: Vec<(Product, i32, i32)>,
-    collision_matrix: Vec<Vec<bool>>
+    // Matrix with the collision of the products and the
+    // jump needed to reach the end of the product
+    collision_jump_matrix: Vec<Vec<i32>>,
 }
 
 impl PartialEq for Suitcase {
@@ -102,7 +104,7 @@ impl Suitcase {
             dim_y: 0,
             max_weight: 0,
             products: Vec::new(),
-            collision_matrix: vec![vec![false; 0]; 0]
+            collision_jump_matrix: vec![vec![0; 0]; 0]
         }
     }
     pub fn init(dim_x: i32, dim_y: i32, max_weight: i32) -> Suitcase {
@@ -111,7 +113,7 @@ impl Suitcase {
             dim_y,
             max_weight,
             products: Vec::new(),
-            collision_matrix: vec![vec![false; dim_x as usize]; dim_y as usize]
+            collision_jump_matrix: vec![vec![0; dim_x as usize]; dim_y as usize]
         }
     }
 
@@ -132,32 +134,76 @@ impl Suitcase {
         return None;
     }
 
-    pub fn find_all_possible_fits(&self, product: &Product) -> Vec<(i32, i32)> {
-        let mut fits = Vec::new();
-        for i in 0..self.dim_x - product.dim_side + 1{
-            for j in 0..self.dim_y - product.dim_side + 1{
-                if self.collision(&product, i, j).is_none() {
-                    fits.push((i, j));
-                }
-            }
-        }
-        return fits;
-    }
+    // pub fn find_all_possible_fits(&self, product: &Product) -> Vec<(i32, i32)> {
+    //     let mut fits = Vec::new();
+    //     for i in 0..self.dim_x - product.dim_side + 1{
+    //         for j in 0..self.dim_y - product.dim_side + 1{
+    //             if self.collision(&product, i, j).is_none() {
+    //                 fits.push((i, j));
+    //             }
+    //         }
+    //     }
+    //     return fits;
+    // }
 
     pub fn find_all_possible_corner_fits(&self, product: &Product) -> Vec<(i32, i32)> {
         let mut fits = Vec::new();
-        for i in 0..self.dim_x - product.dim_side+1{
-            for j in 0..self.dim_y - product.dim_side+1{
-                if self.collision(&product, i, j).is_some()
-                    || (self.corners_in_position(i, j) == 0
-                        && self.corners_in_position(i+product.dim_side-1, j) == 0
-                        && self.corners_in_position(i, j+product.dim_side-1) == 0
-                        && self.corners_in_position(i+product.dim_side-1, j+product.dim_side-1) == 0
-                    )
-                { continue }
-                fits.push((i, j));
+        let mut new_fits = Vec::new();
+        // //OLD not using collision jump matrix
+        // for i in 0..self.dim_x - product.dim_side+1{
+        //     for j in 0..self.dim_y - product.dim_side+1{
+        //         if self.collision(&product, i, j).is_some()
+        //             || (self.corners_in_position(i, j) == 0
+        //                 && self.corners_in_position(i+product.dim_side-1, j) == 0
+        //                 && self.corners_in_position(i, j+product.dim_side-1) == 0
+        //                 && self.corners_in_position(i+product.dim_side-1, j+product.dim_side-1) == 0
+        //             )
+        //         { continue }
+        //         fits.push((i, j));
+        //     }
+        // }
+        // NEW using collision jump matrix
+        for i in 0..self.dim_y - product.dim_side + 1 {
+            let mut j = 0;
+            while j < self.dim_x - product.dim_side + 1 {
+                let jump = self.collision_jump_matrix[i as usize][j as usize];
+                if jump == 0 {
+                    if self.collision(&product, j, i).is_none()
+                        && (self.corners_in_position(j, i) != 0
+                            || self.corners_in_position(j+product.dim_side-1, i) != 0
+                            || self.corners_in_position(j, i+product.dim_side-1) != 0
+                            || self.corners_in_position(j+product.dim_side-1, i+product.dim_side-1) != 0
+                        )
+
+                    { new_fits.push((j, i)); }
+                    j += 1;
+                }
+                else {
+                    j += jump;
+                }
             }
         }
+        // Check if the new fits are equal to the old fits, if not raise an error
+        // if fits.len() != new_fits.len() {
+        //     println!("Error in the new fits");
+        //     println!("Old fits: {:?}", fits);
+        //     println!("New fits: {:?}", new_fits);
+        // }
+        // else {
+        //     for i in 0..fits.len() {
+        //         for j in 0..fits.len() {
+        //             if fits[i] == new_fits[j] {
+        //                 break;
+        //             }
+        //             if j == fits.len() - 1 {
+        //                 println!("Error in the new fits");
+        //                 println!("Old fits: {:?}", fits);
+        //                 println!("New fits: {:?}", new_fits);
+        //             }
+        //         }
+        //     }
+        // }
+
         return fits;
     }
 
@@ -188,14 +234,30 @@ impl Suitcase {
 
     pub fn get_perimeter(&self) -> i32 {
         let mut perimeter = 0;
-        for i in 0..self.collision_matrix.len() {
-            for j in 0..self.collision_matrix[0].len() {
-                if !self.collision_matrix[i][j] {
-                    if i == 0 || self.collision_matrix[i-1][j] {perimeter += 1;}
-                    if i == (self.dim_y-1) as usize || self.collision_matrix[i+1][j] {perimeter += 1;}
-                    if j == 0 || self.collision_matrix[i][j-1] {perimeter += 1;}
-                    if j == (self.dim_x-1) as usize || self.collision_matrix[i][j+1] {perimeter += 1;}
+        // OLD using collision matrix
+        // for i in 0..self.collision_matrix.len() {
+        //     for j in 0..self.collision_matrix[0].len() {
+        //         if !self.collision_matrix[i][j] {
+        //             if i == 0 || self.collision_matrix[i-1][j] {perimeter += 1;}
+        //             if i == (self.dim_y-1) as usize || self.collision_matrix[i+1][j] {perimeter += 1;}
+        //             if j == 0 || self.collision_matrix[i][j-1] {perimeter += 1;}
+        //             if j == (self.dim_x-1) as usize || self.collision_matrix[i][j+1] {perimeter += 1;}
+        //         }
+        //     }
+        // }
+        // NEW using collision jump matrix
+        for i in 0..self.dim_y {
+            let mut j = 0;
+            while j < self.dim_x {
+                let mut jump = self.collision_jump_matrix[i as usize][j as usize];
+                if jump == 0 {
+                    if i == 0 || self.collision_jump_matrix[(i-1) as usize][j as usize] != 0 {perimeter += 1;}
+                    if i == self.dim_y-1 || self.collision_jump_matrix[(i+1) as usize][j as usize] != 0 {perimeter += 1;}
+                    if j == 0 || self.collision_jump_matrix[i as usize][(j-1) as usize] != 0 {perimeter += 1;}
+                    if j == self.dim_x-1|| self.collision_jump_matrix[i as usize][(j+1) as usize] != 0 {perimeter += 1;}
+                    jump = 1;
                 }
+                j += jump;
             }
         }
         return perimeter;
@@ -205,26 +267,52 @@ impl Suitcase {
         let mut corners = 0;
         let i = y as usize;
         let j = x as usize;
-        if !self.collision_matrix[i][j] {
-            if (i == 0 || self.collision_matrix[i-1][j]) && (j == 0 || self.collision_matrix[i][j-1]) {corners += 1;}
-            if (i == 0 || self.collision_matrix[i-1][j]) && (j == (self.dim_x-1) as usize || self.collision_matrix[i][j+1]) {corners += 1;}
-            if (i == (self.dim_y-1) as usize || self.collision_matrix[i+1][j]) && (j == 0 || self.collision_matrix[i][j-1]) {corners += 1;}
-            if (i == (self.dim_y-1) as usize || self.collision_matrix[i+1][j]) && (j == (self.dim_x-1) as usize || self.collision_matrix[i][j+1]) {corners += 1;}
+        if self.collision_jump_matrix[i][j] == 0 {
+            if (i == 0 || self.collision_jump_matrix[i-1][j] != 0)
+                && (j == 0 || self.collision_jump_matrix[i][j-1] != 0)
+                {corners += 1;}
+            if (i == 0 || self.collision_jump_matrix[i-1][j] != 0)
+                && (j == (self.dim_x-1) as usize || self.collision_jump_matrix[i][j+1] != 0)
+                {corners += 1;}
+            if (i == (self.dim_y-1) as usize || self.collision_jump_matrix[i+1][j] != 0)
+                && (j == 0 || self.collision_jump_matrix[i][j-1] != 0)
+                {corners += 1;}
+            if (i == (self.dim_y-1) as usize || self.collision_jump_matrix[i+1][j] != 0)
+                && (j == (self.dim_x-1) as usize || self.collision_jump_matrix[i][j+1] != 0)
+                {corners += 1;}
         }
         else {
-            if (i == 0 || !self.collision_matrix[i - 1][j]) && (j == 0 || !self.collision_matrix[i][j - 1]) { corners += 1; }
-            if (i == 0 || !self.collision_matrix[i - 1][j]) && (j == (self.dim_x - 1) as usize || !self.collision_matrix[i][j + 1]) { corners += 1; }
-            if (i == (self.dim_y - 1) as usize || !self.collision_matrix[i + 1][j]) && (j == 0 || !self.collision_matrix[i][j - 1]) { corners += 1; }
-            if (i == (self.dim_y - 1) as usize || !self.collision_matrix[i + 1][j]) && (j == (self.dim_x - 1) as usize || !self.collision_matrix[i][j + 1]) { corners += 1; }
+            if (i == 0 || self.collision_jump_matrix[i - 1][j] == 0)
+                && (j == 0 || self.collision_jump_matrix[i][j - 1] == 0)
+                { corners += 1; }
+            if (i == 0 || self.collision_jump_matrix[i - 1][j] == 0)
+                && (j == (self.dim_x - 1) as usize || self.collision_jump_matrix[i][j + 1] == 0)
+                { corners += 1; }
+            if (i == (self.dim_y - 1) as usize || self.collision_jump_matrix[i + 1][j] == 0)
+                && (j == 0 || self.collision_jump_matrix[i][j - 1] == 0)
+                { corners += 1; }
+            if (i == (self.dim_y - 1) as usize || self.collision_jump_matrix[i + 1][j] == 0)
+                && (j == (self.dim_x - 1) as usize || self.collision_jump_matrix[i][j + 1] == 0)
+                { corners += 1; }
         }
         return corners;
     }
 
     pub fn get_n_corners(&self) -> i32 {
+        // OLD not using collision jump matrix
+        // for y in 0..self.collision_matrix.len() {
+        //     for x in 0..self.collision_matrix[0].len() {
+        //         corners += self.corners_in_position(x as i32, y as i32);
         let mut corners = 0;
-        for y in 0..self.collision_matrix.len() {
-            for x in 0..self.collision_matrix[0].len() {
-                corners += self.corners_in_position(x as i32, y as i32);
+        for i in 0..self.dim_y {
+            let mut j = 0;
+            while j < self.dim_x {
+                let mut jump = self.collision_jump_matrix[i as usize][j as usize];
+                if jump == 0 {
+                    corners += self.corners_in_position(j, i);
+                    jump = 1;
+                }
+                j += jump;
             }
         }
         return corners;
@@ -243,11 +331,20 @@ impl Suitcase {
         let mut empty_sections: HashMap<(i32, i32), i32> = HashMap::new();
         let mut parent: Vec<Vec<(i32, i32)>> = vec![vec![(-1, -1); self.dim_x as usize]; self.dim_y as usize];
         for i in 0..self.dim_y {
-            for j in 0..self.dim_x {
-                if !self.collision_matrix[i as usize][j as usize] {
+            // OLD not using collision jump matrix
+            // for j in 0..self.dim_x {
+            //     if !self.collision_matrix[i as usize][j as usize] {
+            let mut j = 0;
+            while j < self.dim_x {
+                let mut jump = self.collision_jump_matrix[i as usize][j as usize];
+                if jump == 0 {
+                    jump = 1;
+                    // OLD not using collision jump matrix
+                    // if  j > 0 && !self.collision_matrix[i as usize][j as usize - 1] &&
+                    //     i > 0 && !self.collision_matrix[i as usize - 1][j as usize] {
                     // Check for the left and top neighbors
-                    if  j > 0 && !self.collision_matrix[i as usize][j as usize - 1] &&
-                        i > 0 && !self.collision_matrix[i as usize - 1][j as usize] {
+                    if  j > 0 && self.collision_jump_matrix[i as usize][j as usize - 1] == 0 &&
+                        i > 0 && self.collision_jump_matrix[i as usize - 1][j as usize] == 0 {
                         let (x, y) = self.repre(&mut parent, j-1, i);
                         let (x2, y2) = self.repre(&mut parent, j, i-1);
                         if x != x2 || y != y2 {
@@ -259,12 +356,14 @@ impl Suitcase {
                         parent[i as usize][j as usize] = (x2, y2);
                         empty_sections.entry((x2, y2)).and_modify(|e| *e += 1).or_insert(1);
                     }
-                    else if j > 0 && !self.collision_matrix[i as usize][j as usize - 1] {
+                    // else if j > 0 && !self.collision_matrix[i as usize][j as usize - 1] {
+                    else if j > 0 && self.collision_jump_matrix[i as usize][j as usize - 1] == 0 {
                         let (x, y) = self.repre(&mut parent, j-1, i);
                         parent[i as usize][j as usize] = (x, y);
                         empty_sections.entry((x, y)).and_modify(|e| *e += 1).or_insert(1);
                     }
-                    else if i > 0 && !self.collision_matrix[i as usize - 1][j as usize] {
+                    // else if i > 0 && !self.collision_matrix[i as usize - 1][j as usize] {
+                    else if i > 0 && self.collision_jump_matrix[i as usize - 1][j as usize] == 0 {
                         let (x, y) = self.repre(&mut parent, j, i-1);
                         parent[i as usize][j as usize] = (x, y);
                         empty_sections.entry((x, y)).and_modify(|e| *e += 1).or_insert(1);
@@ -274,8 +373,10 @@ impl Suitcase {
                         empty_sections.entry((j, i)).and_modify(|e| *e += 1).or_insert(1);
                     }
                 }
+                j += jump;
             }
         }
+        // self.show();
         // // Print matrix to check
         // for i in 0..self.dim_y {
         //     for j in 0..self.dim_x {
@@ -292,13 +393,14 @@ impl Suitcase {
         //     }
         //     println!();
         // }
-
+        // println!();
         empty_sections.into_iter().map(|(k, v)| (k.0, v)).collect()
     }
 
     pub fn compute_matrix(&mut self) {
-        self.collision_matrix = self.collision_matrix();
+        self.collision_jump_matrix = self.collision_jump_matrix();
     }
+
     fn collision_matrix(&self) -> Vec<Vec<bool>> {
         let mut matrix = vec![vec![false; self.dim_x as usize]; self.dim_y as usize];
         for (product, x, y) in &self.products {
@@ -311,18 +413,59 @@ impl Suitcase {
         return matrix
     }
 
+    fn collision_jump_matrix(&self) -> Vec<Vec<i32>> {
+        let mut matrix = vec![vec![0; self.dim_x as usize]; self.dim_y as usize];
+        for (product, x, y) in &self.products {
+            for i in *y..(product.dim_side + y) {
+                let mut j = *x;
+                while j < product.dim_side + x {
+                    matrix[i as usize][j as usize] = product.dim_side - (j - x);
+                    if i != *y && i != *y + product.dim_side - 1 {
+                        j += product.dim_side-1;
+                    }
+                    else {
+                        j += 1;
+                    }
+                }
+            }
+        }
+        return matrix;
+    }
+
     fn add_product_to_matrix(&mut self, product: &Product, x: i32, y: i32) {
-        for i in 0..product.dim_side {
-            for j in 0..product.dim_side {
-                self.collision_matrix[(y+i) as usize][(x+j) as usize] = true;
+        // OLD not using collision jump matrix
+        // for i in 0..product.dim_side {
+        //     for j in 0..product.dim_side {
+        //         self.collision_matrix[(y+i) as usize][(x+j) as usize] = true;
+        for i in y..(product.dim_side + y) {
+            let mut j = x;
+            while j < product.dim_side + x {
+                self.collision_jump_matrix[i as usize][j as usize] = product.dim_side - (j - x);
+                if i != y && i != y + product.dim_side - 1 {
+                    j += product.dim_side-1;
+                }
+                else {
+                    j += 1;
+                }
             }
         }
     }
 
     fn remove_product_from_matrix(&mut self, product: &Product, x: i32, y: i32) {
-        for i in 0..product.dim_side {
-            for j in 0..product.dim_side {
-                self.collision_matrix[(y+i) as usize][(x+j) as usize] = false;
+        // OLD not using collision jump matrix
+        // for i in 0..product.dim_side {
+        //     for j in 0..product.dim_side {
+        //         self.collision_matrix[(y+i) as usize][(x+j) as usize] = false;
+        for i in y..(product.dim_side + y) {
+            let mut j = x;
+            while j < product.dim_side + x {
+                self.collision_jump_matrix[i as usize][j as usize] = 0;
+                if i != y && i != y + product.dim_side - 1 {
+                    j += product.dim_side-1;
+                }
+                else {
+                    j += 1;
+                }
             }
         }
     }
@@ -336,7 +479,7 @@ impl Suitcase {
             return false;
         }
         let (x, y) = match position {
-            None => possible_fits[rand::random::<usize>() % possible_fits.len()],
+            None => possible_fits[random::<usize>() % possible_fits.len()],
             Some((x, y)) => {
                 if self.out_of_bounds(product, x, y) {
                     return false;
@@ -345,6 +488,15 @@ impl Suitcase {
             }
         };
         self.products.push((product.clone(), x, y));
+        //Maintain the products sorted by size, for collision check might be faster
+        // let mut index = 0;
+        // for (p, _, _) in &self.products {
+        //     if p.dim_side < product.dim_side {
+        //         break;
+        //     }
+        //     index += 1;
+        // }
+        // self.products.insert(index, (product.clone(), x, y));
         self.add_product_to_matrix(product, x, y);
         return true;
     }
@@ -433,6 +585,25 @@ impl Suitcase {
         }
         show_rect_with_matrix(self.dim_x, self.dim_y, &matrix);
     }
+
+    pub fn show_collision_jump_matrix(&self) {
+        for i in 0..self.dim_y {
+            for j in 0..self.dim_x {
+                let jump = self.collision_jump_matrix[i as usize][j as usize];
+                if jump == 0 {
+                    print!("   ");
+                }
+                else if jump < 10 {
+                    print!(" {} ", jump);
+                }
+                else {
+                    print!("{} ", (jump + 42) as u8 as char);
+                }
+            }
+            println!();
+        }
+    }
+
 }
 #[derive(Clone)]
 pub struct Problem {
