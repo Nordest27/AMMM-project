@@ -3,12 +3,12 @@ use rand;
 use crate::greedy::{one_step_deep_heuristic};
 
 fn objective(suitcase: &Suitcase) -> i32{
-    let empty_sections = suitcase.get_empty_sections_with_size();
+    //let empty_sections = suitcase.get_empty_sections_with_size();
     let dims = suitcase.dim_x*suitcase.dim_y;
     return 10*dims*suitcase.get_price()
         -dims*suitcase.get_perimeter()
         -dims*suitcase.get_n_corners()
-        -(empty_sections.iter().map(|(_, size)|dims/size).sum::<i32>())
+        //-(empty_sections.iter().map(|(_, size)|dims/size).sum::<i32>())
     ;
 }
 

@@ -38,7 +38,7 @@ fn run_all_problems() {
                 total_best_objective += best_objective;
                 println!("Problem {}, Best Objective: {}", i, best_objective);
                 let init_time = std::time::Instant::now();
-                let (problem, objective) = greedy::greedy_loop(&problem, greedy::price_heuristic, 0.0);
+                //let (problem, objective) = greedy::greedy_loop(&problem, greedy::price_heuristic, 0.0);
                 // let (problem, objective) = greedy::greedy(&problem, greedy::weight_heuristic);
                 // let (problem, objective) = greedy::greedy(&problem, greedy::dim_side_heuristic);
                 // let (problem, objective) = greedy::greedy(&problem, greedy::combined_heuristic);
@@ -47,7 +47,7 @@ fn run_all_problems() {
                 // let (problem, objective) = greedy::greedy_loop(&problem, greedy::corners_heuristic, 0.0);
                 // let (suitcase, objective) = local_search::hill_climbing(&problem);
 
-                //let objective = grasp::grasp(&problem, alpha);
+                let objective = grasp::grasp(&problem, alpha);
                 let elapsed_time = init_time.elapsed().as_secs();
                 time_content.push_str(&format!(", {}", elapsed_time));
                 content.push_str(&format!(", {}", objective));
@@ -63,8 +63,8 @@ fn run_all_problems() {
                 let problem = reader::read_input_file(
                     format!("../generated_problems/myproblem.{}.dat", i).as_str());
                 let init_time = std::time::Instant::now();
-                let (problem, objective) = greedy::greedy_loop(&problem, greedy::one_step_deep_heuristic, alpha);
-                // let objective = grasp::grasp(&problem, alpha);
+                //let (problem, objective) = greedy::greedy_loop(&problem, greedy::one_step_deep_heuristic, alpha);
+                let objective = grasp::grasp(&problem, alpha);
                 let elapsed_time = init_time.elapsed().as_secs();
                 time_content.push_str(&format!(", {}", elapsed_time));
                 content.push_str(&format!(", {}", objective));
