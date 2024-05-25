@@ -18,7 +18,7 @@ fn run_my_problems() {
 fn run_all_problems() {
     let mut content = "alpha, objective\n".to_string();
     let mut alpha = -0.1;
-    while alpha <= 0.0 {
+    while alpha <= -0.1 {
         alpha += 0.1;
         for _ in 0..1 {
             let mut total_objective = 0;
@@ -39,13 +39,14 @@ fn run_all_problems() {
                 // let (problem, objective) = greedy::greedy_loop(&problem, greedy::corners_heuristic, 0.0);
                 // let (suitcase, objective) = local_search::hill_climbing(&problem);
 
-                let objective = grasp::grasp(&problem, alpha);
+                let objective = grasp::grasp(&problem, 1.0);
                 // problem.suitcase.show()
                 // suitcase.show();
                 total_objective += objective;
             }
             println!("Objective: {}, Best Objective Difference: {}",
                      total_objective, total_best_objective - total_objective);
+            /*
             for i in 0..10 {
                 println!("Problem {}", i);
                 let problem = reader::read_input_file(
@@ -55,6 +56,7 @@ fn run_all_problems() {
             }
             println!("Total objective: {}", total_objective);
             content.push_str(&format!("{}, {}\n", (alpha * 10.0).round() / 10.0, total_objective));
+             */
         }
     }
     write("../results.csv", content).expect("Unable to write file");
