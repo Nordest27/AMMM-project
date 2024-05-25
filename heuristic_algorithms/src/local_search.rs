@@ -94,10 +94,10 @@ fn get_all_suitcase_neighbours(
 {
     let remaining_products: Vec<Product> = problem.remaining_possible_products();
     let mut neighbours: Vec<Suitcase> = Vec::new();
-    // neighbours.append(&mut get_replacements(&problem.suitcase, &remaining_products));
-    // neighbours.append(&mut get_removals(&problem.suitcase));
-    // neighbours.append(&mut get_moves(&problem.suitcase));
-    // neighbours.append(&mut get_additions(&problem.suitcase, &remaining_products));
+    neighbours.append(&mut get_replacements(&problem.suitcase, &remaining_products));
+    neighbours.append(&mut get_removals(&problem.suitcase));
+    neighbours.append(&mut get_moves(&problem.suitcase));
+    neighbours.append(&mut get_additions(&problem.suitcase, &remaining_products));
     return neighbours;
 }
 

@@ -22,9 +22,9 @@ pub fn grasp(problem: &Problem, alpha: f32) -> i32
         // let (iter_problem, _) = greedy_loop(&problem, price_heuristic, alpha);
         //let (iter_problem, _) = greedy_loop(&problem, combined_heuristic, alpha);
         // let (iter_problem, _) = greedy_loop(&problem, perimeter_heuristic, alpha);
-        let (iter_problem, objective) = greedy_loop(&problem, one_step_deep_heuristic, alpha);
+        let (iter_problem, _) = greedy_loop(&problem, one_step_deep_heuristic, alpha);
         let (suitcase, objective) = hill_climbing(&iter_problem);
-        let suitcase = iter_problem.suitcase.clone();
+
         if objective > best_objective {
             println!("Improvement in iteration {} -> {}€ {}g",
                      i, suitcase.get_price(), suitcase.get_weight());

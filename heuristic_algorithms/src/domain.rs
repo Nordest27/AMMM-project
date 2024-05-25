@@ -134,17 +134,19 @@ impl Suitcase {
         return None;
     }
 
-    // pub fn find_all_possible_fits(&self, product: &Product) -> Vec<(i32, i32)> {
-    //     let mut fits = Vec::new();
-    //     for i in 0..self.dim_x - product.dim_side + 1{
-    //         for j in 0..self.dim_y - product.dim_side + 1{
-    //             if self.collision(&product, i, j).is_none() {
-    //                 fits.push((i, j));
-    //             }
-    //         }
-    //     }
-    //     return fits;
-    // }
+    /*
+     pub fn find_all_possible_fits(&self, product: &Product) -> Vec<(i32, i32)> {
+         let mut fits = Vec::new();
+         for i in 0..self.dim_x - product.dim_side + 1{
+             for j in 0..self.dim_y - product.dim_side + 1{
+                 if self.collision(&product, i, j).is_none() {
+                     fits.push((i, j));
+                 }
+             }
+         }
+         return fits;
+     }
+    */
 
     pub fn find_all_possible_corner_fits(&self, product: &Product) -> Vec<(i32, i32)> {
         let mut fits = Vec::new();
@@ -241,17 +243,20 @@ impl Suitcase {
 
     pub fn get_perimeter(&self) -> i32 {
         let mut perimeter = 0;
+        /*
+        let mut old_perimeter = 0;
         // OLD using collision matrix
-        // for i in 0..self.collision_matrix.len() {
-        //     for j in 0..self.collision_matrix[0].len() {
-        //         if !self.collision_matrix[i][j] {
-        //             if i == 0 || self.collision_matrix[i-1][j] {perimeter += 1;}
-        //             if i == (self.dim_y-1) as usize || self.collision_matrix[i+1][j] {perimeter += 1;}
-        //             if j == 0 || self.collision_matrix[i][j-1] {perimeter += 1;}
-        //             if j == (self.dim_x-1) as usize || self.collision_matrix[i][j+1] {perimeter += 1;}
-        //         }
-        //     }
-        // }
+        let collision_matrix = self.collision_matrix();
+         for i in 0..collision_matrix.len() {
+             for j in 0..collision_matrix[0].len() {
+                 if !collision_matrix[i][j] {
+                     if i == 0 || collision_matrix[i-1][j] {old_perimeter += 1;}
+                     if i == (self.dim_y-1) as usize || collision_matrix[i+1][j] {old_perimeter += 1;}
+                     if j == 0 || collision_matrix[i][j-1] {old_perimeter += 1;}
+                     if j == (self.dim_x-1) as usize || collision_matrix[i][j+1] {old_perimeter += 1;}
+                 }
+             }
+         }*/
         // NEW using collision jump matrix
         for i in 0..self.dim_y {
             let mut j = 0;
@@ -267,6 +272,7 @@ impl Suitcase {
                 j += jump;
             }
         }
+        // Check if the new perimeter is equal to the old perimeter, if not raise an error
         return perimeter;
     }
 
@@ -580,21 +586,21 @@ impl Suitcase {
     }
 
     pub fn show_collision_jump_matrix(&self) {
+        let mut matrix = vec![vec![' '; self.dim_x as usize]; self.dim_y as usize];
         for i in 0..self.dim_y {
             for j in 0..self.dim_x {
                 let jump = self.collision_jump_matrix[i as usize][j as usize];
                 if jump == 0 {
-                    print!("   ");
                 }
                 else if jump < 10 {
-                    print!(" {} ", jump);
+                    matrix[i as usize][j as usize] = (jump+48) as u8 as char;
                 }
                 else {
-                    print!("{} ", (jump + 42) as u8 as char);
+                    matrix[i as usize][j as usize] = (jump+55) as u8 as char;
                 }
             }
-            println!();
         }
+        show_rect_with_matrix(self.dim_x, self.dim_y, &matrix);
     }
 
 }
@@ -645,7 +651,7 @@ fn calculate_max_weight(suitcase: &Suitcase) -> i32 {
 
 pub fn generate_problem(x: i32, y: i32) -> Problem {
     let mut products = Vec::new();
-    let max_size = ((30+random::<i32>()%26)*x.min(y))/100;
+    let max_size = ((50+random::<i32>().abs()%26)*x.min(y))/100;
     println!("Max size {}", max_size);
     let mut remaining_area = x*y;
     let mut index = 0;
